@@ -76,45 +76,44 @@
     </div>
 
     <script>
-        // Lire les paramètres "id" et "contenu" depuis l'URL
+        // Récupérer l'UUID depuis l'URL
         const urlParams = new URLSearchParams(window.location.search);
-        const contenu = urlParams.get('contenu');
-        const id = urlParams.get('id');
+        const uuid = urlParams.get('uuid');
 
-        if (contenu) {
-            document.getElementById('content').value = decodeURIComponent(contenu);
-        }
+        console.log('UUID:', uuid);
 
-        // Soumettre les modifications vers n8n
-        function submitChanges() {
-            const content = document.getElementById('content').value;
+        // Charger le compte rendu initial (exemple avec fetch)
+        fetch(`https://example.com/api/meetings/${uuid}`)
+            .then(response => response.json())
+            .then(data => {
+                // Afficher le compte rendu dans un champ de texte modifiable
+                document.getElementById('textArea').value = data.text;
+            })
+            .catch(error => console.error('Error:', error));
 
-            if (!content.trim()) {
-                alert("Veuillez entrer du texte avant de valider.");
-                return;
-            }
+        // Envoyer les modifications au webhook d'n8n
+        document.getElementById('validateButton').addEventListener('click', function() {
+            const modifiedText = document.getElementById('textArea').value;
 
-            fetch('/webhook/compte-rendu', { // URL d'écoute configurée dans n8n
+            fetch('https://n8n-n26w.onrender.com/webhook-test/cb8cace6-c925-433a-9d1d-90d8e302e0b4', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    id: id, 
-                    contenu: content 
-                })
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    uuid: uuid,
+                    modifiedText: modifiedText,
+                }),
             })
-            .then(response => {
-                if (response.ok) {
-                    document.getElementById('successMessage').style.display = 'block';
-                    document.getElementById('errorMessage').style.display = 'none';
-                } else {
-                    throw new Error('Erreur lors de l\'envoi.');
-                }
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                // Rediriger l'utilisateur vers une page de confirmation ou fermer la fenêtre
             })
-            .catch(error => {
-                document.getElementById('errorMessage').style.display = 'block';
-                document.getElementById('successMessage').style.display = 'none';
+            .catch((error) => {
+                console.error('Error:', error);
             });
-        }
+        });
     </script>
 </body>
 </html>
